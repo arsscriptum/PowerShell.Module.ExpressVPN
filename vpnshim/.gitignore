@@ -1,0 +1,36 @@
+# Output directories
+bin/**
+tmp/**
+vs/obj/**
+obj/**
+x64/**
+test/bin/**
+test/tmp/**
+examples/bin/**
+examples/tmp/**
+*.dll
+*.lib
+# VS files
+*.vcxproj.user
+*.vcxproj.filters
+*.VC.db
+*.opendb
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.vs
+
+# Executables
+*.exe
+*.out
+*.app
+
+tmp*.bat
+__*.bat
+
+# meta proj file generated with MSBUILDEMITSOLUTION=1
+*.vcxproj.metaproj
+*.metaproj
