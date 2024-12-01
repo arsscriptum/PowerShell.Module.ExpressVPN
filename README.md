@@ -4,97 +4,45 @@ A Module to Control ExpressVPN Networking
 
 
 
-## vpnshim 
 
+### Implementing A Custom Protocol
 
-Function to Convert a String to Unicode Hexadecimal
+I found that when I implement a tool that it using a browser, with a web interface, it is very useful to implement my own custom protocol to start application from custom links like ```testprotocol://``` . For example, ```foobar://dothis``` can be mapped to a certain application. Widely used applications such as Zoom, Slack, and custom VPN clients register their custom protocols using this same mechanism. For instance:
+- **Zoom** uses `zoommtg://`.
+- **Slack** uses `slack://`.
 
-To convert a string into an encoded Unicode string in hexadecimal format in PowerShell, you can use the following function:
+This setup allows a web browser, application, or script to invoke ExpressVPN directly via URLs like `vpn://connect`, passing commands or parameters to control the VPN client.
 
-```powershell
-	function Convert-ToUnicodeHex {
-	    param (
-	        [Parameter(Mandatory)]
-	        [string]$InputString
-	    )
+FIrst, we need to add The `"URL Protocol"=""` entry in the Windows Registry. When Windows processes URLs, it looks for the following:
+1. The protocol part of the URL (e.g., `vpn` in `vpn://`).
+2. A matching key in `HKEY_CLASSES_ROOT` (e.g., `HKEY_CLASSES_ROOT\expressvpn`).
+3. The presence of the `"URL Protocol"` entry confirms that the key corresponds to a URL scheme rather than a file type or other association.
 
-	    $unicodeHex = ""
-	    foreach ($char in $InputString.ToCharArray()) {
-	        # Convert each character to its Unicode code point in hexadecimal format
-	        $unicodeHex += "{0:X4}," -f [int][char]$char
-	    }
+For the **VPN** , I have created a custom protocol named ```vpn``` . Here's how to do it:
+1. Open `regedit`.
+2. Create a new key under `HKEY_CLASSES_ROOT` (e.g., `HKEY_CLASSES_ROOT\vpn`).
+3. Add a default value: `@="URL:vpn Protocol"`.
+4. Add the `"URL Protocol"=""` value.
+5. Add a `shell\open\command` key, and set its default value to a test executable (e.g., `notepad.exe`).
 
-	    # Trim the trailing comma and return the result
-	    return $unicodeHex.TrimEnd(',')
-	}
-
-	# Example usage
-	$string = "ExpressVPN"
-	$encodedString = Convert-ToUnicodeHex -InputString $string
-	Write-Output $encodedString
-```
-
-
-
-This registry file defines a custom protocol handler for ExpressVPN. Here's a breakdown of what each section does:
-
-### 1. **Protocol Definition**:
 ```plaintext
 [HKEY_CLASSES_ROOT\vpn]
-@="URL:ExpressVPN Protocol"
+@="URL:vpn Protocol"
 "URL Protocol"=""
-```
-- This creates a new registry entry for a protocol named `vpn`.
-- The `@="URL:ExpressVPN Protocol"` sets the display name for the protocol.
-- The `"URL Protocol"=""` entry designates it as a protocol handler, allowing the OS to interpret `vpn://` URLs and invoke the associated application.
-
-### 2. **Default Icon**:
-```plaintext
-[HKEY_CLASSES_ROOT\vpn\DefaultIcon]
-@="\"C:\\Program Files (x86)\\ExpressVPN\\expressvpn-ui\\ExpressVPN.exe,1\""
-```
-- This sets the icon for the `vpn` protocol.
-- The icon is located in the file `ExpressVPN.exe` at `C:\Program Files (x86)\ExpressVPN\expressvpn-ui`. The `,1` refers to the second icon resource embedded in the executable (icon resources are zero-indexed).
-
-### 3. **Shell Commands**:
-```plaintext
-[HKEY_CLASSES_ROOT\vpn\shell]
-
-[HKEY_CLASSES_ROOT\vpn\shell\open]
 
 [HKEY_CLASSES_ROOT\vpn\shell\open\command]
-@=hex(2):...
+@="notepad.exe"
 ```
-- These entries define the action that occurs when the protocol is invoked.
-
-### 4. **Command Execution**:
-```plaintext
-[HKEY_CLASSES_ROOT\vpn\shell\open\command]
-@=hex(2):22,00,43,00,3a,00,...
-```
-- This specifies the command to execute when a URL with the `expressvpn://` scheme is opened.
-- The `hex(2):` value represents a Unicode string in hexadecimal format. When decoded, it translates to the command:
-
-```plaintext
-"C:\Program Files (x86)\ExpressVPN\expressvpn-ui\ExpressVPN.exe" "%1"
-```
-
-- This command:
-  - Launches `ExpressVPN.exe` located in the specified path.
-  - Passes the URL (or other parameters) to the application as `%1`.
-  
-### **Purpose of the Registry File**:
-1. **Define a Custom Protocol**: This registry entry lets ExpressVPN handle URLs with the `expressvpn://` scheme.
-2. **Associate an Icon**: Provides a visual representation for the protocol in file dialogs or other UI elements.
-3. **Enable Command Execution**: Specifies the exact application and parameters to invoke when the protocol is triggered.
-
-### **Use Case**:
-- This setup allows a web browser, application, or script to invoke ExpressVPN directly via URLs like `expressvpn://connect`, passing commands or parameters to control the VPN client.
+- Save the changes and test by typing `vpn://` in a browser or `Run` dialog.
+- Without `"URL Protocol"=""`, Windows will not recognize `vpn://`.
 
 
-To convert a string into an encoded Unicode string in hexadecimal format in PowerShell, you can use the following function:
+### Encoding a command for Registry Use
+If you are encoding this for a registry value in `hex(2):` format, you would separate each Unicode code point with a comma, as shown above.
 
-### Function to Convert a String to Unicode Hexadecimal
+
+
+#### Function to Convert a String to Unicode Hexadecimal
 ```powershell
 function Convert-ToUnicodeHex {
     param (
@@ -118,17 +66,23 @@ $encodedString = Convert-ToUnicodeHex -InputString $string
 Write-Output $encodedString
 ```
 
-### Example Output
-If you input the string `ExpressVPN`, the output would be:
-```
-0045,0078,0070,0072,0065,0073,0073,0056,0050,004E
-```
 
-### Explanation
-1. **`ToCharArray()`**: Breaks the string into individual characters.
-2. **`[int][char]$char`**: Converts each character to its Unicode code point (decimal).
-3. **`"{0:X4}"`**: Formats the number as a 4-digit hexadecimal value.
-4. **Joining**: Adds commas between the hexadecimal values for registry compatibility.
 
-### Encoding for Registry Use
-If you are encoding this for a registry value in `hex(2):` format, you would separate each Unicode code point with a comma, as shown above.
+## vpn_protocol.reg registry file
+
+**Purpose of the Registry File**
+
+1. Define a Custom Protocol: This registry entry lets ExpressVPN handle URLs with the `vpn://` scheme.
+2. Associate an Icon: Provides a visual representation for the protocol in file dialogs or other UI elements.
+3. Enable Command Execution: Specifies the exact application and parameters to invoke when the protocol is triggered.
+
+## vpnshim application
+
+I have made the vpn shim application to act as a shim when invoking ```vpn://<action>``` the goal is to parse the url, extract the command and call ExpressVPN Client as an administrator.
+
+Exmaples:
+
+- [VPN Disconnect](vpn://disconnect)
+- [ConnectVPN to Frankfurt](vpn://connect+7)
+- [ConnectVPN to Frankfurt](vpn://connect+8) 
+
