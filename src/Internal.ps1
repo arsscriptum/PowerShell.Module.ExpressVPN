@@ -143,5 +143,3 @@ This is a test for the PowerShell ExpressVPN Module. Do you want to continue the
     }
  } 
 
-
-Start-VpnModuleTest 
