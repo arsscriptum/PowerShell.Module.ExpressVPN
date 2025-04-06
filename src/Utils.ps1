@@ -20,8 +20,6 @@ function Test-PortainerPorts {
 }
 
 
-
-
 function Test-OpenPorts {
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -230,3 +228,73 @@ function Convert-ToContainerPorts {
     # Return the array of unique PSCustomObjects
     return $result
 }
+
+
+
+
+
+function Get-OpenVpnExePath { 
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $False)]
+        [string]$Server
+    )
+    try{
+        $RegPath = "HKLM:\SOFTWARE\OpenVPN"
+
+        $Prop = (Get-ItemProperty -Path $Path -ErrorAction Stop )
+        if($Null -eq $Prop){ throw "Error looking up property in registry $RegPath" }
+        $Value =  $Prop | Select-Object -ExpandProperty 'exe_path'
+        return $Value
+
+    } catch {
+        return $null
+    }
+}
+
+
+function Get-OpenVpnSiteList { 
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $False)]
+        [string]$Server
+    )
+    try{
+        $RegPath = "HKLM:\SOFTWARE\OpenVPN"
+
+        $Prop = (Get-ItemProperty -Path $Path -ErrorAction Stop )
+        if($Null -eq $Prop){ throw "Error looking up property in registry $RegPath" }
+        $Value =  $Prop | Select-Object -ExpandProperty 'exit_nodes_list'
+        $JsonData = $Value | ConvertFrom-Json
+        return $JsonData
+
+    } catch {
+        return $null
+    }
+}
+
+
+
+
+
+function Get-OpenVpnDefaultConfigPath { 
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $False)]
+        [string]$Server
+    )
+    try{
+        $RegPath = "HKLM:\SOFTWARE\OpenVPN"
+
+        $Prop = (Get-ItemProperty -Path $Path -ErrorAction Stop )
+        if($Null -eq $Prop){ throw "Error looking up property in registry $RegPath" }
+        $Value =  $Prop | Select-Object -ExpandProperty 'default_config_path'
+        return $Value
+
+    } catch {
+        return $null
+    }
+}
+
+
+
